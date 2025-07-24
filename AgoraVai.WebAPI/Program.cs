@@ -28,8 +28,11 @@ namespace AgoraVai
             builder.Services.AddHostedService<PaymentProcessingJob>();
             builder.Services.AddHostedService<PaymentPersistingJob>();
 
+            var cs = config.GetConnectionString("Postgres")!;
+            builder.Services.AddScoped<IPaymentRepository>(_ =>
+                new PaymentRepository(cs));
+
             builder.Services.AddHttpClients(config);
-            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
             builder.Services.AddScoped<IPaymentProcessingOrchestratorService, PaymentProcessingOrchestratorService>();
 
             var app = builder.Build();

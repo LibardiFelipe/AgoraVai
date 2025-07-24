@@ -5,6 +5,15 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgoraVai.WebAPI", "AgoraVai.WebAPI\AgoraVai.WebAPI.csproj", "{37DAAD23-E785-49D5-9E8E-ED3E2CD40A5D}"
 EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}"
+	ProjectSection(SolutionItems) = preProject
+		Dockerfile = Dockerfile
+		init.sql = init.sql
+		nginx.conf = nginx.conf
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +24,15 @@ Global
 		{37DAAD23-E785-49D5-9E8E-ED3E2CD40A5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37DAAD23-E785-49D5-9E8E-ED3E2CD40A5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37DAAD23-E785-49D5-9E8E-ED3E2CD40A5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7EE2E807-3FA0-4A9B-8624-2AE930478675}
 	EndGlobalSection
 EndGlobal
