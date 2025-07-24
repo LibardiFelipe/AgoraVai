@@ -1,7 +1,7 @@
-﻿using AgoraVai.Requests;
+﻿using AgoraVai.WebAPI.Requests;
 using System.Threading.Channels;
 
-namespace AgoraVai.Channels
+namespace AgoraVai.WebAPI.Channels
 {
     public sealed class ProcessorChannel
     {

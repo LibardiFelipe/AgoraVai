@@ -1,7 +1,7 @@
-﻿using AgoraVai.Entities;
+﻿using AgoraVai.WebAPI.Entities;
 using Npgsql;
 
-namespace AgoraVai.Repositories
+namespace AgoraVai.WebAPI.Repositories
 {
     public sealed class PaymentRepository : IPaymentRepository
     {

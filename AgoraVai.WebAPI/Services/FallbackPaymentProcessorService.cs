@@ -1,4 +1,6 @@
-﻿namespace AgoraVai.Services
+﻿using AgoraVai.Services;
+
+namespace AgoraVai.WebAPI.Services
 {
     public sealed class FallbackPaymentProcessorService
         : BasePaymentProcessorService, IFallbackPaymentProcessorService

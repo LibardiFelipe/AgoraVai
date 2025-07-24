@@ -1,11 +1,10 @@
-﻿using AgoraVai.Configs;
-using AgoraVai.Services;
+﻿using AgoraVai.WebAPI.Services;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using System.Diagnostics;
 
-namespace AgoraVai.Utils
+namespace AgoraVai.WebAPI.Utils
 {
     public static class Extensions
     {

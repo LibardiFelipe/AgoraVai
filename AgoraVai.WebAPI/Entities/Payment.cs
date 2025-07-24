@@ -1,4 +1,4 @@
-﻿namespace AgoraVai.Entities
+﻿namespace AgoraVai.WebAPI.Entities
 {
     public sealed class Payment
     {

@@ -1,4 +1,5 @@
-﻿using AgoraVai.Entities;
+﻿using AgoraVai.WebAPI.Entities;
+using AgoraVai.WebAPI.Services;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace AgoraVai.Utils
+namespace AgoraVai.WebAPI.Utils
 {
     public sealed class Result<TContent>
     {

@@ -1,6 +1,6 @@
-﻿using AgoraVai.Entities;
+﻿using AgoraVai.WebAPI.Entities;
 
-namespace AgoraVai.Services
+namespace AgoraVai.WebAPI.Services
 {
     public interface IPaymentProcessorService
     {

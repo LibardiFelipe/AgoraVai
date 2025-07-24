@@ -1,11 +1,11 @@
-﻿using AgoraVai.Channels;
-using AgoraVai.Entities;
-using AgoraVai.Repositories;
-using AgoraVai.Utils;
+﻿using AgoraVai.WebAPI.Channels;
+using AgoraVai.WebAPI.Entities;
+using AgoraVai.WebAPI.Repositories;
+using AgoraVai.WebAPI.Utils;
 using System.Diagnostics;
 using System.Threading.Channels;
 
-namespace AgoraVai.Jobs
+namespace AgoraVai.WebAPI.Jobs
 {
     public class PaymentPersistingJob : BackgroundService
     {

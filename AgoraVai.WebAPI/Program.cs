@@ -1,8 +1,9 @@
-using AgoraVai.Channels;
-using AgoraVai.Jobs;
-using AgoraVai.Requests;
-using AgoraVai.Services;
-using AgoraVai.Utils;
+using AgoraVai.WebAPI.Channels;
+using AgoraVai.WebAPI.Jobs;
+using AgoraVai.WebAPI.Repositories;
+using AgoraVai.WebAPI.Requests;
+using AgoraVai.WebAPI.Services;
+using AgoraVai.WebAPI.Utils;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 
@@ -28,6 +29,7 @@ namespace AgoraVai
             builder.Services.AddHostedService<PaymentPersistingJob>();
 
             builder.Services.AddHttpClients(config);
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
             builder.Services.AddScoped<IPaymentProcessingOrchestratorService, PaymentProcessingOrchestratorService>();
 
             var app = builder.Build();

@@ -1,7 +1,7 @@
-﻿using AgoraVai.Entities;
+﻿using AgoraVai.WebAPI.Entities;
 using System.Threading.Channels;
 
-namespace AgoraVai.Channels
+namespace AgoraVai.WebAPI.Channels
 {
     public sealed class PersistenceChannel
     {
