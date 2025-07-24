@@ -1,8 +1,9 @@
 using AgoraVai.Channels;
 using AgoraVai.Jobs;
 using AgoraVai.Requests;
+using AgoraVai.Services;
+using AgoraVai.Utils;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace AgoraVai
@@ -12,6 +13,7 @@ namespace AgoraVai
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
+            var config = builder.Configuration;
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
@@ -24,6 +26,9 @@ namespace AgoraVai
             builder.Services.AddSingleton<PersistenceChannel>();
             builder.Services.AddHostedService<PaymentProcessingJob>();
             builder.Services.AddHostedService<PaymentPersistingJob>();
+
+            builder.Services.AddHttpClients(config);
+            builder.Services.AddScoped<IPaymentProcessingOrchestratorService, PaymentProcessingOrchestratorService>();
 
             var app = builder.Build();
 

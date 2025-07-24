@@ -1,5 +1,7 @@
 ﻿using AgoraVai.Channels;
 using AgoraVai.Entities;
+using AgoraVai.Repositories;
+using AgoraVai.Utils;
 using System.Diagnostics;
 using System.Threading.Channels;
 
@@ -8,16 +10,23 @@ namespace AgoraVai.Jobs
     public class PaymentPersistingJob : BackgroundService
     {
         private readonly ChannelReader<Payment> _reader;
+        private readonly IServiceProvider _serviceProvider;
 
-        public PaymentPersistingJob(PersistenceChannel channel)
+        public PaymentPersistingJob(
+            PersistenceChannel channel,
+            IServiceProvider serviceProvider)
         {
             _reader = channel.GetReader();
+            _serviceProvider = serviceProvider;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             const int batchSize = 200;
             const int maxWaitMs = 40;
+
+            using var scope = _serviceProvider.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IPaymentRepository>();
 
             var buffer = new List<Payment>(batchSize);
             while (!stoppingToken.IsCancellationRequested)
@@ -26,11 +35,11 @@ namespace AgoraVai.Jobs
 
                 var first = await _reader.ReadAsync(stoppingToken);
                 buffer.Add(first);
-                
+
                 var batchStart = Stopwatch.GetTimestamp();
                 while (buffer.Count < batchSize)
                 {
-                    var elapsed = ElapsedMilliseconds(batchStart);
+                    var elapsed = batchStart.ElapsedMilliseconds();
                     if (elapsed >= maxWaitMs) break;
 
                     var readTask = _reader.WaitToReadAsync(stoppingToken).AsTask();
@@ -43,16 +52,8 @@ namespace AgoraVai.Jobs
                         buffer.Add(item);
                 }
 
-                await PersistAsync(buffer, stoppingToken);
+                await repository.InserBatchAsync(buffer);
             }
         }
-
-        private async Task PersistAsync(List<Payment> results, CancellationToken ct)
-        {
-            await Task.Delay(3, ct);
-        }
-
-        private static long ElapsedMilliseconds(long startTicks) =>
-            (Stopwatch.GetTimestamp() - startTicks) * 1000 / Stopwatch.Frequency;
     }
 }

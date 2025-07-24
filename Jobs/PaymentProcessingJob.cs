@@ -1,6 +1,7 @@
 ﻿using AgoraVai.Channels;
 using AgoraVai.Entities;
 using AgoraVai.Requests;
+using AgoraVai.Services;
 using AgoraVai.Utils;
 using System.Diagnostics;
 using System.Threading.Channels;
@@ -11,15 +12,18 @@ namespace AgoraVai.Jobs
     {
         private readonly ChannelReader<NewPaymentRequest> _processingReader;
         private readonly PersistenceChannel _persistenceReader;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<PaymentProcessingJob> _logger;
 
         public PaymentProcessingJob(
             ProcessorChannel processorChannel,
             PersistenceChannel persistenceChannel,
+            IServiceProvider serviceProvider,
             ILogger<PaymentProcessingJob> logger)
         {
             _processingReader = processorChannel.GetReader();
             _persistenceReader = persistenceChannel;
+            _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
@@ -28,6 +32,10 @@ namespace AgoraVai.Jobs
             const int batchSize = 100;
             const int maxParallelism = 10;
             const int maxWaitMs = 50;
+
+            using var scope = _serviceProvider.CreateScope();
+            var orchestrator = scope.ServiceProvider
+                .GetRequiredService<IPaymentProcessingOrchestratorService>();
 
             var buffer = new List<NewPaymentRequest>(batchSize);
             while (!stoppingToken.IsCancellationRequested)
@@ -43,7 +51,7 @@ namespace AgoraVai.Jobs
                     while (buffer.Count < batchSize)
                         while (buffer.Count < batchSize)
                         {
-                            var elapsed = ElapsedMilliseconds(batchStart);
+                            var elapsed = batchStart.ElapsedMilliseconds();
                             if (elapsed >= maxWaitMs) break;
 
                             var readTask = _processingReader.WaitToReadAsync(stoppingToken).AsTask();
@@ -66,12 +74,12 @@ namespace AgoraVai.Jobs
                         {
                             CorrelationId = req.CorrelationId,
                             Amount = req.Amount,
-                            ReceivedAt = DateTimeOffset.UtcNow
+                            RequestedAt = DateTimeOffset.UtcNow
                         };
 
                         try
                         {
-                            var result = await ProcessPaymentAsync(payment)
+                            var result = await orchestrator.ProcessAsync(payment, ct)
                                 .ConfigureAwait(false);
 
                             if (result.IsSuccess)
@@ -94,16 +102,6 @@ namespace AgoraVai.Jobs
                     _logger.LogError(ex, "Erro no main loop!");
                 }
             }
-        }
-
-        private static long ElapsedMilliseconds(long startTicks) =>
-            (Stopwatch.GetTimestamp() - startTicks) * 1000 / Stopwatch.Frequency;
-
-        private async Task<Result<Payment>> ProcessPaymentAsync(Payment payment)
-        {
-            await Task.Delay(5);
-            payment.ChangeProcessedBy("proccessor");
-            return Result<Payment>.Success(payment);
         }
     }
 }

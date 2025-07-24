@@ -18,8 +18,8 @@ namespace AgoraVai.Channels
             _channel = Channel.CreateUnbounded<Payment>(options);
         }
 
-        public ValueTask WriteAsync(Payment result, CancellationToken ct = default) =>
-            _channel.Writer.WriteAsync(result, ct);
+        public ValueTask WriteAsync(Payment result, CancellationToken cancellationToken = default) =>
+            _channel.Writer.WriteAsync(result, cancellationToken);
 
         public ChannelReader<Payment> GetReader() => _channel.Reader;
     }
