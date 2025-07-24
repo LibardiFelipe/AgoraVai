@@ -14,11 +14,11 @@ services:
     networks:
       - backend
       - payment-processor
-    deploy:
-      resources:
-        limits:
-          cpus: "0.1"
-          memory: "6MB"
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.1"
+    #       memory: "6MB"
 
   payment-api-1: &api
     container_name: payment-api-1
@@ -41,17 +41,16 @@ services:
     healthcheck:
       test: [
         "CMD-SHELL",
-        "curl --fail http://localhost:8080/healthz || exit 1",
-        "curl --fail http://localhost:8080/healthz/akka || exit 1"]
+        "curl --fail http://localhost:8080/healthz || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: '100MB'
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '0.5'
+    #       memory: '100MB'
 
   payment-api-2:
     <<: *api
@@ -88,11 +87,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.3"
-          memory: "100MB"
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.3"
+    #       memory: "100MB"
 
 networks:
   backend:

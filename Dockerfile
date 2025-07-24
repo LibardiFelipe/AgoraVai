@@ -2,6 +2,7 @@ ARG LAUNCHING_FROM_VS
 ARG FINAL_BASE_IMAGE=${LAUNCHING_FROM_VS:+aotdebug}
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -27,9 +28,19 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     gdb
+
 USER app
 
 FROM ${FINAL_BASE_IMAGE:-mcr.microsoft.com/dotnet/runtime-deps:9.0} AS final
+
+# Instala a PRAGA do curl
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+USER app
+
 WORKDIR /app
 EXPOSE 8080
 COPY --from=publish /app/publish .
