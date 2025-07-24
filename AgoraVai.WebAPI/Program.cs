@@ -39,8 +39,8 @@ namespace AgoraVai
             var app = builder.Build();
 
             app.MapPost("/payments", async (
-                [FromBody] NewPaymentRequest request,
-                [FromServices] ProcessorChannel channelManager) =>
+                [FromServices] ProcessorChannel channelManager,
+                [FromBody] NewPaymentRequest request) =>
             {
                 await channelManager.WriteAsync(request);
                 return Results.Accepted();

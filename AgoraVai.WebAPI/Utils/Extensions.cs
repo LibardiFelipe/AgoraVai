@@ -43,7 +43,7 @@ namespace AgoraVai.WebAPI.Utils
             get
             {
                 var backoffDelay = Backoff.DecorrelatedJitterBackoffV2(
-                    medianFirstRetryDelay: TimeSpan.FromSeconds(1),
+                    medianFirstRetryDelay: TimeSpan.FromSeconds(1.5),
                     retryCount: 3);
 
                 return HttpPolicyExtensions

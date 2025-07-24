@@ -33,37 +33,52 @@ namespace AgoraVai.WebAPI.Jobs
             const int maxParallelism = 10;
             const int maxWaitMs = 50;
 
+            _logger.LogInformation(
+                "PaymentProcessingJob iniciado. BatchSize: {BatchSize}, MaxParallelism: {MaxParallelism}, MaxWaitMs: {MaxWaitMs}",
+                batchSize, maxParallelism, maxWaitMs);
+
             using var scope = _serviceProvider.CreateScope();
             var orchestrator = scope.ServiceProvider
                 .GetRequiredService<IPaymentProcessingOrchestratorService>();
 
             var buffer = new List<NewPaymentRequest>(batchSize);
+            var batchCounter = 0;
+            var stopwatch = new Stopwatch();
+
             while (!stoppingToken.IsCancellationRequested)
             {
+                _logger.LogInformation("Iniciando novo batch de processamento...");
+
                 try
                 {
                     buffer.Clear();
+                    stopwatch.Restart();
 
                     var first = await _processingReader.ReadAsync(stoppingToken);
                     buffer.Add(first);
 
                     var batchStart = Stopwatch.GetTimestamp();
                     while (buffer.Count < batchSize)
-                        while (buffer.Count < batchSize)
-                        {
-                            var elapsed = batchStart.ElapsedMilliseconds();
-                            if (elapsed >= maxWaitMs) break;
+                    {
+                        var elapsed = batchStart.ElapsedMilliseconds();
+                        if (elapsed >= maxWaitMs) break;
 
-                            var readTask = _processingReader.WaitToReadAsync(stoppingToken).AsTask();
-                            var delayTask = Task.Delay(maxWaitMs - (int)elapsed, stoppingToken);
+                        var readTask = _processingReader.WaitToReadAsync(stoppingToken).AsTask();
+                        var delayTask = Task.Delay(maxWaitMs - (int)elapsed, stoppingToken);
 
-                            var winner = await Task.WhenAny(readTask, delayTask);
-                            if (winner == delayTask || !readTask.Result) break;
+                        var winner = await Task.WhenAny(readTask, delayTask);
+                        if (winner == delayTask || !readTask.Result) break;
 
-                            while (buffer.Count < batchSize && _processingReader.TryRead(out var item))
-                                buffer.Add(item);
-                        }
+                        while (buffer.Count < batchSize && _processingReader.TryRead(out var item))
+                            buffer.Add(item);
+                    }
 
+                    batchCounter++;
+                    _logger.LogInformation(
+                        "Processando batch #{BatchNumber}: {BatchSize} pagamentos coletados em {ElapsedMs}ms",
+                        batchCounter, buffer.Count, stopwatch.ElapsedMilliseconds);
+
+                    stopwatch.Restart();
                     await Parallel.ForEachAsync(buffer, new ParallelOptions
                     {
                         MaxDegreeOfParallelism = maxParallelism,
@@ -96,12 +111,18 @@ namespace AgoraVai.WebAPI.Jobs
                             _logger.LogError(ex, "Erro no pagamento {Id}.", payment.CorrelationId);
                         }
                     });
+
+                    _logger.LogInformation(
+                        "Batch #{BatchNumber} concluído em {ElapsedMs}ms.",
+                        batchCounter, stopwatch.ElapsedMilliseconds);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Erro no main loop!");
+                    _logger.LogError(ex, "Erro no main loop do batch #{BatchNumber}!", batchCounter);
                 }
             }
+
+            _logger.LogInformation("PaymentProcessingJob finalizado após processar {TotalBatches} batches", batchCounter);
         }
     }
 }
