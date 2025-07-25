@@ -16,6 +16,15 @@ namespace AgoraVai
             var builder = WebApplication.CreateSlimBuilder(args);
             var config = builder.Configuration;
 
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.AllowSynchronousIO = false;
+                options.Limits.MaxConcurrentConnections = 1000;
+                options.Limits.MaxConcurrentUpgradedConnections = 1000;
+                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(1);
+            });
+
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
                 options.SerializerOptions
@@ -23,6 +32,7 @@ namespace AgoraVai
                     .Insert(0, AppJsonSerializerContext.Default);
             });
 
+            builder.Services.AddLogging();
             builder.Services.AddHealthChecks();
             builder.Services.AddSingleton<ProcessorChannel>();
             builder.Services.AddSingleton<PersistenceChannel>();

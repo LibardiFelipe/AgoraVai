@@ -1,5 +1,5 @@
 services:
-  nginx-lb:
+  payment-lb:
     image: nginx:1.25-alpine
     container_name: payment-lb
     ports:
@@ -14,11 +14,11 @@ services:
     networks:
       - backend
       - payment-processor
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.1"
-    #       memory: "6MB"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "50MB"
 
   payment-api-1: &api
     container_name: payment-api-1
@@ -29,11 +29,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Postgres:
-        "server=postgres; database=PaymentsDB; user id=user; password=password; pooling=true; maximum pool size=256; multiplexing=true; no reset on close=true; max auto prepare=50; auto prepare min usages=1;"
+        "server=payment-db; database=PaymentsDB; user id=user; password=password; pooling=true; maximum pool size=256; multiplexing=true; no reset on close=true; max auto prepare=50; auto prepare min usages=1;"
       PaymentProcessors__Default__BaseUrl: "http://payment-processor-default:8080"
       PaymentProcessors__Fallback__BaseUrl: "http://payment-processor-fallback:8080"
     depends_on:
-      postgres:
+      payment-db:
         condition: service_healthy
     networks:
       - backend
@@ -46,18 +46,18 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '0.5'
-    #       memory: '100MB'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '100MB'
 
   payment-api-2:
     <<: *api
     container_name: payment-api-2
     hostname: payment-api-2
 
-  postgres:
+  payment-db:
     image: postgres:16-alpine
     container_name: payment-db
     command: >-
@@ -71,8 +71,6 @@ services:
                -c max_wal_size=4GB
                -c checkpoint_timeout=30min
                -c log_min_duration_statement=-1
-               -c log_statement = 'none'
-               -c log_min_messages = panic
     environment:
       POSTGRES_DB: PaymentsDB
       POSTGRES_USER: user
@@ -89,11 +87,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.3"
-    #       memory: "100MB"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "100MB"
 
 networks:
   backend:
