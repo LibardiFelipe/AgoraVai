@@ -7,7 +7,7 @@ using AgoraVai.WebAPI.Utils;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 
-namespace AgoraVai
+namespace AgoraVai.WebAPI
 {
     public static class Program
     {

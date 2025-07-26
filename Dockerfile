@@ -20,7 +20,7 @@ FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./AgoraVai.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:9.0 AS final
+FROM base AS final
 
 # Instala a PRAGA do curl
 USER root
