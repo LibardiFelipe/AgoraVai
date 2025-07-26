@@ -11,7 +11,7 @@ namespace AgoraVai
 {
     public static class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
             var config = builder.Configuration;
@@ -32,7 +32,6 @@ namespace AgoraVai
                     .Insert(0, AppJsonSerializerContext.Default);
             });
 
-            builder.Services.AddLogging();
             builder.Services.AddHealthChecks();
             builder.Services.AddSingleton<ProcessorChannel>();
             builder.Services.AddSingleton<PersistenceChannel>();
@@ -81,7 +80,7 @@ namespace AgoraVai
 
             app.MapHealthChecks("/healthz");
 
-            await app.RunAsync();
+            app.Run();
         }
     }
 

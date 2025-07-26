@@ -5,10 +5,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<PublishAot>true</PublishAot>
-		<TrimMode>link</TrimMode>
 		<InvariantGlobalization>true</InvariantGlobalization>
-		<PublishTrimmed>true</PublishTrimmed>
-		<IlcOptimizationPreference>Speed</IlcOptimizationPreference>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
 	</PropertyGroup>

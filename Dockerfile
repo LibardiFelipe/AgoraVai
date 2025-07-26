@@ -1,6 +1,3 @@
-ARG LAUNCHING_FROM_VS
-ARG FINAL_BASE_IMAGE=${LAUNCHING_FROM_VS:+aotdebug}
-
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
 USER $APP_UID
@@ -23,15 +20,7 @@ FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./AgoraVai.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
 
-FROM base AS aotdebug
-USER root
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    gdb
-
-USER app
-
-FROM ${FINAL_BASE_IMAGE:-mcr.microsoft.com/dotnet/runtime-deps:9.0} AS final
+FROM mcr.microsoft.com/dotnet/runtime-deps:9.0 AS final
 
 # Instala a PRAGA do curl
 USER root
