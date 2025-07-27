@@ -36,7 +36,6 @@ namespace AgoraVai.WebAPI.Jobs
             var repository = scope.ServiceProvider.GetRequiredService<IPaymentRepository>();
 
             var buffer = new List<Payment>(batchSize);
-            var batchCounter = 0;
             var stopwatch = new Stopwatch();
 
             while (!stoppingToken.IsCancellationRequested)
@@ -67,25 +66,14 @@ namespace AgoraVai.WebAPI.Jobs
                             buffer.Add(item);
                     }
 
-                    batchCounter++;
-                    _logger.LogInformation(
-                        "Persistindo batch #{BatchNumber}: {BatchSize} pagamentos coletados em {ElapsedMs}ms",
-                        batchCounter, buffer.Count, stopwatch.ElapsedMilliseconds);
-
                     stopwatch.Restart();
                     await repository.InserBatchAsync(buffer);
-
-                    _logger.LogInformation(
-                        "Batch #{BatchNumber} persistido com sucesso em {ElapsedMs}ms. Total de pagamentos: {PaymentCount}",
-                        batchCounter, stopwatch.ElapsedMilliseconds, buffer.Count);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Erro ao persistir o batch #{BatchNumber}!", batchCounter);
+                    _logger.LogError(ex, "Erro ao persistir o batch!");
                 }
             }
-
-            _logger.LogInformation("PaymentPersistingJob finalizado após processar {TotalBatches} batches", batchCounter);
         }
     }
 }

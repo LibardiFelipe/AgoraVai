@@ -1,13 +1,33 @@
 ﻿using AgoraVai.WebAPI.Entities;
+using System.Text.Json.Serialization;
 
 namespace AgoraVai.WebAPI.Repositories
 {
-    public record SummariesReadModel(
-        SummaryReadModel Default,
-        SummaryReadModel Fallback);
+    public sealed class SummariesReadModel
+    {
+        [JsonPropertyName("default")]
+        public SummaryReadModel Default { get; init; } = new SummaryReadModel
+        {
+            TotalAmount = 0,
+            TotalRequests = 0
+        };
 
-    public sealed record SummaryReadModel(
-        long TotalRequests, decimal TotalAmount);
+        [JsonPropertyName("fallback")]
+        public SummaryReadModel Fallback { get; init; } = new SummaryReadModel
+        {
+            TotalAmount = 0,
+            TotalRequests = 0
+        };
+    }
+
+    public sealed class SummaryReadModel
+    {
+        [JsonPropertyName("total_requests")]
+        public long TotalRequests { get; init; } = 0;
+        
+        [JsonPropertyName("total_amount")]
+        public decimal TotalAmount { get; init; } = 0;
+    }
 
     public sealed class SummaryRowReadModel
     {

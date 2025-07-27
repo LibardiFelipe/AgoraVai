@@ -42,7 +42,6 @@ namespace AgoraVai.WebAPI.Jobs
                 .GetRequiredService<IPaymentProcessingOrchestratorService>();
 
             var buffer = new List<NewPaymentRequest>(batchSize);
-            var batchCounter = 0;
             var stopwatch = new Stopwatch();
 
             while (!stoppingToken.IsCancellationRequested)
@@ -72,11 +71,6 @@ namespace AgoraVai.WebAPI.Jobs
                         while (buffer.Count < batchSize && _processingReader.TryRead(out var item))
                             buffer.Add(item);
                     }
-
-                    batchCounter++;
-                    _logger.LogInformation(
-                        "Processando batch #{BatchNumber}: {BatchSize} pagamentos coletados em {ElapsedMs}ms",
-                        batchCounter, buffer.Count, stopwatch.ElapsedMilliseconds);
 
                     stopwatch.Restart();
                     await Parallel.ForEachAsync(buffer, new ParallelOptions
@@ -111,18 +105,12 @@ namespace AgoraVai.WebAPI.Jobs
                             _logger.LogError(ex, "Erro no pagamento {Id}.", payment.CorrelationId);
                         }
                     });
-
-                    _logger.LogInformation(
-                        "Batch #{BatchNumber} concluído em {ElapsedMs}ms.",
-                        batchCounter, stopwatch.ElapsedMilliseconds);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Erro no main loop do batch #{BatchNumber}!", batchCounter);
+                    _logger.LogError(ex, "Erro no main loop do batch!");
                 }
             }
-
-            _logger.LogInformation("PaymentProcessingJob finalizado após processar {TotalBatches} batches", batchCounter);
         }
     }
 }
