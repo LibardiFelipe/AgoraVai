@@ -22,10 +22,10 @@ namespace AgoraVai.WebAPI.Repositories
 
     public sealed class SummaryReadModel
     {
-        [JsonPropertyName("total_requests")]
+        [JsonPropertyName("totalRequests")]
         public long TotalRequests { get; init; } = 0;
         
-        [JsonPropertyName("total_amount")]
+        [JsonPropertyName("totalAmount")]
         public decimal TotalAmount { get; init; } = 0;
     }
 
