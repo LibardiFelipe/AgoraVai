@@ -17,9 +17,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "60MB"
+          cpus: "0.2"
+          memory: "50MB"
 
+  # 0.3 x 3 = 0.9 CPUs
+  # 50MB x 3 = 150MB memória
   payment-api-1: &api
     container_name: payment-api-1
     hostname: payment-api-1
@@ -54,13 +56,18 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: '80MB'
+          cpus: '0.3'
+          memory: '50MB'
 
   payment-api-2:
     <<: *api
     container_name: payment-api-2
     hostname: payment-api-2
+
+  payment-api-3:
+    <<: *api
+    container_name: payment-api-3
+    hostname: payment-api-3
 
   payment-db:
     image: postgres:15-alpine
@@ -99,7 +106,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "130MB"
+          memory: "150MB"
 
 networks:
   backend:
