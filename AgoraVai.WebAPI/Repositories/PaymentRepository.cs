@@ -1,96 +1,100 @@
 ﻿using AgoraVai.WebAPI.Entities;
-using Npgsql;
-using NpgsqlTypes;
+using StackExchange.Redis;
+using System.Globalization;
 
 namespace AgoraVai.WebAPI.Repositories
 {
     public sealed class PaymentRepository : IPaymentRepository
     {
-        private readonly string _connString;
+        private readonly IDatabase _database;
+        private readonly IServer _server;
 
-        public PaymentRepository(string connString)
+        public PaymentRepository(IConnectionMultiplexer multiplexer)
         {
-            _connString = connString;
+            _database = multiplexer.GetDatabase();
+            _server = multiplexer.GetServer(multiplexer.GetEndPoints()[0]);
         }
 
-        public async ValueTask InserBatchAsync(IEnumerable<Payment> payments)
-        {
-            await using var conn = new NpgsqlConnection(_connString);
-            await conn.OpenAsync();
-
-            const string sql = @"
-                COPY payments (
-                    correlation_id,
-                    amount,
-                    processed_by,
-                    requested_at_utc)
-                FROM STDIN (FORMAT BINARY)";
-
-            await using var writer = await conn.BeginBinaryImportAsync(sql);
-            foreach (var payment in payments)
-            {
-                await writer.StartRowAsync();
-                await writer.WriteAsync(payment.CorrelationId);
-                await writer.WriteAsync(payment.Amount);
-                await writer.WriteAsync(payment.ProcessedBy);
-                await writer.WriteAsync(payment.RequestedAt);
-            }
-
-            await writer.CompleteAsync();
-        }
-
-        public async ValueTask<IEnumerable<SummaryRowReadModel>> GetProcessorsSummaryAsync(
+        public async ValueTask<SummariesReadModel> GetProcessorsSummaryAsync(
             DateTimeOffset? from, DateTimeOffset? to)
         {
-            await using var conn = new NpgsqlConnection(_connString);
-            await conn.OpenAsync();
+            var fromTs = from?.ToUnixTimeMilliseconds() ?? 0;
+            var toTs = to?.ToUnixTimeMilliseconds() ?? double.MaxValue;
 
-            const string sql = @"
-                SELECT 
-                    processed_by AS ProcessedBy, 
-                    COUNT(*) AS TotalRequests, 
-                    SUM(amount) AS TotalAmount
-                FROM payments
-                WHERE (@from IS NULL OR requested_at_utc >= @from)
-                  AND (@to IS NULL OR requested_at_utc <= @to)
-                GROUP BY processed_by;
-            ";
-
-            await using var cmd = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.Add(new NpgsqlParameter("@from", NpgsqlDbType.TimestampTz)
+            async Task<SummaryReadModel> SummaryForAsync(string processor)
             {
-                Value = (object?)from ?? DBNull.Value
-            });
+                var zkey = $"summary:{processor}:history";
+                var hkey = $"summary:{processor}:data";
 
-            cmd.Parameters.Add(new NpgsqlParameter("@to", NpgsqlDbType.TimestampTz)
-            {
-                Value = (object?)to ?? DBNull.Value
-            });
+                var ids = await _database.SortedSetRangeByScoreAsync(zkey, fromTs, toTs)
+                    .ConfigureAwait(false);
 
-            var summaries = new List<SummaryRowReadModel>();
-            await using var reader = await cmd.ExecuteReaderAsync();
+                if (ids.Length <= 0)
+                    return new SummaryReadModel { TotalRequests = 0, TotalAmount = 0m };
 
-            while (await reader.ReadAsync())
-            {
-                summaries.Add(new SummaryRowReadModel
+                var values = await _database.HashGetAsync(hkey, ids)
+                    .ConfigureAwait(false);
+
+                var totalRequests = values.Length;
+                var totalAmount = 0m;
+                foreach (var v in values)
                 {
-                    ProcessedBy = reader.GetString(0),
-                    TotalRequests = reader.GetInt64(1),
-                    TotalAmount = reader.GetDecimal(2)
-                });
+                    if (v.IsNull)
+                        continue;
+                    if (decimal.TryParse(v.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dec))
+                        totalAmount += dec;
+                }
+
+                return new SummaryReadModel
+                {
+                    TotalRequests = totalRequests,
+                    TotalAmount = Math.Round(totalAmount, 2)
+                };
             }
 
-            return summaries;
+            var summary = new SummariesReadModel
+            {
+                Default = await SummaryForAsync("default"),
+                Fallback = await SummaryForAsync("fallback")
+            };
+
+            return summary;
+        }
+
+        public async ValueTask<bool> InsertAsync(Payment payment)
+        {
+            var processor = payment.ProcessedBy;
+            var hashKey = $"summary:{processor}:data";
+            var zsetKey = $"summary:{processor}:history";
+
+            var tran = _database.CreateTransaction();
+            _ = tran.HashSetAsync(
+                hashKey, payment.CorrelationId.ToString(), payment.Amount.ToString(CultureInfo.InvariantCulture));
+            _ = tran.SortedSetAddAsync(
+                zsetKey, payment.CorrelationId.ToString(), payment.RequestedAtUtc.ToUnixTimeMilliseconds());
+
+            return await tran.ExecuteAsync();
         }
 
         public async ValueTask PurgeAsync()
         {
-            await using var conn = new NpgsqlConnection(_connString);
-            await conn.OpenAsync();
+            var key = $"summary:*";
+            const int pageSize = 250;
 
-            const string sql = "TRUNCATE TABLE payments;";
-            await using var cmd = new NpgsqlCommand(sql, conn);
-            await cmd.ExecuteNonQueryAsync();
+            var keys = new List<RedisKey>(pageSize);
+            await foreach (var hashKey in _server.KeysAsync(
+                pattern: $"{key}:data", pageSize: pageSize))
+            {
+                keys.Add(hashKey);
+                if (keys.Count >= pageSize)
+                {
+                    await _database.KeyDeleteAsync([.. keys]);
+                    keys.Clear();
+                }
+            }
+
+            if (keys.Count > 0)
+                await _database.KeyDeleteAsync([.. keys]);
         }
     }
 }

@@ -89,7 +89,7 @@ namespace AgoraVai.WebAPI.Jobs
                         {
                             CorrelationId = req.CorrelationId,
                             Amount = req.Amount,
-                            RequestedAt = DateTimeOffset.UtcNow
+                            RequestedAtUtc = DateTimeOffset.UtcNow
                         };
 
                         try

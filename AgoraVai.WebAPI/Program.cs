@@ -5,6 +5,7 @@ using AgoraVai.WebAPI.Requests;
 using AgoraVai.WebAPI.Services;
 using AgoraVai.WebAPI.Utils;
 using Microsoft.AspNetCore.Mvc;
+using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 namespace AgoraVai.WebAPI
@@ -38,9 +39,9 @@ namespace AgoraVai.WebAPI
             builder.Services.AddHostedService<PaymentProcessingJob>();
             builder.Services.AddHostedService<PaymentPersistingJob>();
 
-            var cs = config.GetConnectionString("Postgres")!;
-            builder.Services.AddScoped<IPaymentRepository>(_ =>
-                new PaymentRepository(cs));
+            builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+                ConnectionMultiplexer.Connect(config.GetConnectionString("Redis")!));
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
             builder.Services.AddHttpClients(config);
             builder.Services.AddScoped<IPaymentProcessingOrchestratorService, PaymentProcessingOrchestratorService>();
@@ -51,7 +52,8 @@ namespace AgoraVai.WebAPI
                 [FromServices] ProcessorChannel channelManager,
                 [FromBody] NewPaymentRequest request) =>
             {
-                await channelManager.WriteAsync(request);
+                await channelManager.WriteAsync(request)
+                    .ConfigureAwait(false);
                 return Results.Accepted();
             });
 
@@ -59,22 +61,16 @@ namespace AgoraVai.WebAPI
                 [FromServices] IPaymentRepository paymentRepository,
                 [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to) =>
             {
-                var payments = await paymentRepository.GetProcessorsSummaryAsync(from, to);
-
-                var defaultPayment = payments
-                    .FirstOrDefault(p => p.ProcessedBy == "default") ?? new SummaryRowReadModel();
-                var fabllbackPayment = payments
-                    .FirstOrDefault(p => p.ProcessedBy == "fallback") ?? new SummaryRowReadModel();
-
-                return Results.Ok(new SummariesReadModel(
-                    new SummaryReadModel(defaultPayment.TotalRequests, defaultPayment.TotalAmount),
-                    new SummaryReadModel(fabllbackPayment.TotalRequests, fabllbackPayment.TotalAmount)));
+                return Results.Ok(
+                    await paymentRepository.GetProcessorsSummaryAsync(from, to)
+                        .ConfigureAwait(false));
             });
 
             app.MapPost("/purge-payments", async (
                 [FromServices] IPaymentRepository paymentRepository) =>
             {
-                await paymentRepository.PurgeAsync();
+                await paymentRepository.PurgeAsync()
+                    .ConfigureAwait(false);
                 return Results.Ok();
             });
 

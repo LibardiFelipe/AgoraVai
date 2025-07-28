@@ -2,12 +2,17 @@
 
 namespace AgoraVai.WebAPI.Repositories
 {
-    public record SummariesReadModel(
-        SummaryReadModel Default,
-        SummaryReadModel Fallback);
+    public sealed class SummariesReadModel
+    {
+        public SummaryReadModel Default { get; init; } = new();
+        public SummaryReadModel Fallback { get; init; } = new();
+    }
 
-    public sealed record SummaryReadModel(
-        long TotalRequests, decimal TotalAmount);
+    public sealed class SummaryReadModel
+    {
+        public long TotalRequests { get; init; }
+        public decimal TotalAmount { get; init; }
+    }
 
     public sealed class SummaryRowReadModel
     {
@@ -18,8 +23,8 @@ namespace AgoraVai.WebAPI.Repositories
 
     public interface IPaymentRepository
     {
-        ValueTask InserBatchAsync(IEnumerable<Payment> payments);
-        ValueTask<IEnumerable<SummaryRowReadModel>> GetProcessorsSummaryAsync(
+        ValueTask<bool> InsertAsync(Payment payment);
+        ValueTask<SummariesReadModel> GetProcessorsSummaryAsync(
             DateTimeOffset? from, DateTimeOffset? to);
         ValueTask PurgeAsync();
     }

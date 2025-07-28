@@ -28,12 +28,11 @@ services:
       dockerfile: Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres:
-        "server=payment-db; database=PaymentsDB; user id=user; password=password; pooling=true; maximum pool size=256; multiplexing=true; no reset on close=true; max auto prepare=50; auto prepare min usages=1;"
+      ConnectionStrings__Redis: "payment-cache:6379"
       PaymentProcessors__Default__BaseUrl: "http://payment-processor-default:8080"
       PaymentProcessors__Fallback__BaseUrl: "http://payment-processor-fallback:8080"
     depends_on:
-      payment-db:
+      payment-cache:
         condition: service_healthy
     networks:
       - backend
@@ -50,49 +49,29 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: '100MB'
+          memory: '125MB'
 
   payment-api-2:
     <<: *api
     container_name: payment-api-2
     hostname: payment-api-2
 
-  payment-db:
-    image: postgres:15-alpine
-    container_name: payment-db
-    hostname: payment-db
-    command: >-
-      postgres -c max_connections=400
-               -c shared_buffers=512MB
-               -c synchronous_commit=off
-               -c fsync=off
-               -c full_page_writes=off
-               -c wal_level=minimal
-               -c max_wal_senders=0
-               -c max_wal_size=4GB
-               -c checkpoint_timeout=30min
-               -c log_min_duration_statement=-1
-    environment:
-      POSTGRES_DB: PaymentsDB
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  payment-cache:
+    image: redis:7-alpine
+    container_name: payment-cache
+    hostname: payment-cache
     networks:
       - backend
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d PaymentsDB"]
+    healthcheck: 
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 3
     deploy:
       resources:
         limits:
           cpus: "0.3"
-          memory: "100MB"
+          memory: "50MB"
 
 networks:
   backend:
