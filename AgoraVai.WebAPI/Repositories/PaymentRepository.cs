@@ -16,7 +16,7 @@ namespace AgoraVai.WebAPI.Repositories
         public async ValueTask InserBatchAsync(IEnumerable<Payment> payments)
         {
             await using var conn = new NpgsqlConnection(_connString);
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             const string sql = @"
                 COPY payments (
@@ -26,24 +26,25 @@ namespace AgoraVai.WebAPI.Repositories
                     requested_at_utc)
                 FROM STDIN (FORMAT BINARY)";
 
-            await using var writer = await conn.BeginBinaryImportAsync(sql);
+            await using var writer = await conn.BeginBinaryImportAsync(sql)
+                .ConfigureAwait(false);
             foreach (var payment in payments)
             {
-                await writer.StartRowAsync();
-                await writer.WriteAsync(payment.CorrelationId);
-                await writer.WriteAsync(payment.Amount);
-                await writer.WriteAsync(payment.ProcessedBy);
-                await writer.WriteAsync(payment.RequestedAt);
+                await writer.StartRowAsync().ConfigureAwait(false);
+                await writer.WriteAsync(payment.CorrelationId).ConfigureAwait(false);
+                await writer.WriteAsync(payment.Amount).ConfigureAwait(false);
+                await writer.WriteAsync(payment.ProcessedBy).ConfigureAwait(false);
+                await writer.WriteAsync(payment.RequestedAt).ConfigureAwait(false);
             }
 
-            await writer.CompleteAsync();
+            await writer.CompleteAsync().ConfigureAwait(false);
         }
 
         public async ValueTask<IEnumerable<SummaryRowReadModel>> GetProcessorsSummaryAsync(
             DateTimeOffset? from, DateTimeOffset? to)
         {
             await using var conn = new NpgsqlConnection(_connString);
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             const string sql = @"
                 SELECT 
@@ -68,9 +69,10 @@ namespace AgoraVai.WebAPI.Repositories
             });
 
             var summaries = new List<SummaryRowReadModel>();
-            await using var reader = await cmd.ExecuteReaderAsync();
+            await using var reader = await cmd.ExecuteReaderAsync()
+                .ConfigureAwait(false);
 
-            while (await reader.ReadAsync())
+            while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 summaries.Add(new SummaryRowReadModel
                 {
@@ -86,11 +88,13 @@ namespace AgoraVai.WebAPI.Repositories
         public async ValueTask PurgeAsync()
         {
             await using var conn = new NpgsqlConnection(_connString);
-            await conn.OpenAsync();
+            await conn.OpenAsync()
+                .ConfigureAwait(false);
 
             const string sql = "TRUNCATE TABLE payments;";
             await using var cmd = new NpgsqlCommand(sql, conn);
-            await cmd.ExecuteNonQueryAsync();
+            await cmd.ExecuteNonQueryAsync()
+                .ConfigureAwait(false);
         }
     }
 }

@@ -3,11 +3,11 @@ using System.Threading.Channels;
 
 namespace AgoraVai.WebAPI.Channels
 {
-    public sealed class ProcessorChannel
+    public sealed class ProcessingChannel
     {
         private readonly Channel<NewPaymentRequest> _channel;
 
-        public ProcessorChannel()
+        public ProcessingChannel()
         {
             var options = new UnboundedChannelOptions
             {

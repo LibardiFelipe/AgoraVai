@@ -24,7 +24,7 @@ namespace AgoraVai.WebAPI.Utils
                     client.Timeout = TimeSpan.FromSeconds(10);
                 })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                .AddPolicyHandler(RetryPolicy);
+                .AddPolicyHandler(DefaultRetryPolicy);
 
             services.AddHttpClient<IFallbackPaymentProcessorService, FallbackPaymentProcessorService>(
                 client =>
@@ -33,18 +33,33 @@ namespace AgoraVai.WebAPI.Utils
                     client.Timeout = TimeSpan.FromSeconds(30);
                 })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                .AddPolicyHandler(RetryPolicy);
+                .AddPolicyHandler(FallbackRetryPolicy);
 
             return services;
         }
 
-        private static IAsyncPolicy<HttpResponseMessage> RetryPolicy
+        private static IAsyncPolicy<HttpResponseMessage> DefaultRetryPolicy
         {
             get
             {
                 var backoffDelay = Backoff.DecorrelatedJitterBackoffV2(
-                    medianFirstRetryDelay: TimeSpan.FromSeconds(1.5),
-                    retryCount: 3);
+                    medianFirstRetryDelay: TimeSpan.FromSeconds(1),
+                    retryCount: 5);
+
+                return HttpPolicyExtensions
+                    .HandleTransientHttpError()
+                    .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    .WaitAndRetryAsync(backoffDelay);
+            }
+        }
+
+        private static IAsyncPolicy<HttpResponseMessage> FallbackRetryPolicy
+        {
+            get
+            {
+                var backoffDelay = Backoff.DecorrelatedJitterBackoffV2(
+                    medianFirstRetryDelay: TimeSpan.FromSeconds(1),
+                    retryCount: 10);
 
                 return HttpPolicyExtensions
                     .HandleTransientHttpError()
