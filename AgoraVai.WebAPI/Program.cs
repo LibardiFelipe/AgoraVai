@@ -1,12 +1,12 @@
 using AgoraVai.WebAPI.Channels;
 using AgoraVai.WebAPI.Jobs;
 using AgoraVai.WebAPI.Models;
+using AgoraVai.WebAPI.Publishers;
 using AgoraVai.WebAPI.Repositories;
 using AgoraVai.WebAPI.Requests;
 using AgoraVai.WebAPI.Services;
 using AgoraVai.WebAPI.Utils;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using System.Runtime;
 using System.Text.Json.Serialization;
 
@@ -38,6 +38,7 @@ namespace AgoraVai.WebAPI
             builder.Services.AddSingleton<PersistenceChannel>();
             builder.Services.AddHostedService<PaymentProcessingJob>();
             builder.Services.AddHostedService<PaymentPersistingJob>();
+            builder.Services.AddSingleton<Publisher>();
 
             var cfg1 = config.GetRequiredSection("JobsConfig:ProcessingBatchSize").Get<int>();
             var cfg2 = config.GetRequiredSection("JobsConfig:ProcessingParalellism").Get<int>();
@@ -104,7 +105,6 @@ namespace AgoraVai.WebAPI
         }
     }
 
-    [JsonSerializable(typeof(JobsConfig))]
     [JsonSerializable(typeof(NewPaymentRequest))]
     [JsonSerializable(typeof(SummariesReadModel))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext

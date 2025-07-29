@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PublishAot>true</PublishAot>
+		<Trimming>true</Trimming>
+		<TrimMode>link</TrimMode>
+		<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DisableImplicitComponents>true</DisableImplicitComponents>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+		<TieredCompilation>true</TieredCompilation>
+		<TieredPGO>true</TieredPGO>
+		<ReadyToRun>true</ReadyToRun>
+		<RetainVM>false</RetainVM>
+	</PropertyGroup>
+
+</Project>
