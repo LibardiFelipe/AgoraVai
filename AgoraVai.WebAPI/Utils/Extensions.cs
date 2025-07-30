@@ -2,22 +2,18 @@
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
-using System.Diagnostics;
 
 namespace AgoraVai.WebAPI.Utils
 {
     public static class Extensions
     {
-        public static long ElapsedMilliseconds(this long startTicks) =>
-            (Stopwatch.GetTimestamp() - startTicks) * 1000 / Stopwatch.Frequency;
-
         public static IServiceCollection AddHttpClients(
             this IServiceCollection services, IConfiguration config)
         {
             var defaultUrl = config.GetRequiredSection("PaymentProcessors:Default:BaseUrl").Value!;
             var fallbackUrl = config.GetRequiredSection("PaymentProcessors:Fallback:BaseUrl").Value!;
 
-            services.AddHttpClient<IDefaultPaymentProcessorService, DefaultPaymentProcessorService>(
+            services.AddHttpClient<DefaultPaymentProcessorService>(
                 client =>
                 {
                     client.BaseAddress = new Uri(defaultUrl);
@@ -26,7 +22,7 @@ namespace AgoraVai.WebAPI.Utils
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
                 .AddPolicyHandler(DefaultRetryPolicy);
 
-            services.AddHttpClient<IFallbackPaymentProcessorService, FallbackPaymentProcessorService>(
+            services.AddHttpClient<FallbackPaymentProcessorService>(
                 client =>
                 {
                     client.BaseAddress = new Uri(fallbackUrl);

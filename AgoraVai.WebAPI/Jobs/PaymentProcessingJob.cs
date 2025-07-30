@@ -1,9 +1,10 @@
-﻿using AgoraVai.WebAPI.Channels;
+﻿using AgoraVai.Shared.Utils;
+using AgoraVai.WebAPI.Channels;
 using AgoraVai.WebAPI.Entities;
 using AgoraVai.WebAPI.Models;
+using AgoraVai.WebAPI.Publishers;
 using AgoraVai.WebAPI.Requests;
 using AgoraVai.WebAPI.Services;
-using AgoraVai.WebAPI.Utils;
 using System.Diagnostics;
 using System.Threading.Channels;
 
@@ -12,7 +13,7 @@ namespace AgoraVai.WebAPI.Jobs
     public sealed class PaymentProcessingJob : BackgroundService
     {
         private readonly ChannelReader<NewPaymentRequest> _processingReader;
-        private readonly PersistenceChannel _persistenceReader;
+        private readonly PersistenceChannel _persistenceChannel;
         private readonly IServiceProvider _serviceProvider;
         private readonly JobsConfig _jobsConfig;
         private readonly ILogger<PaymentProcessingJob> _logger;
@@ -25,7 +26,7 @@ namespace AgoraVai.WebAPI.Jobs
             ILogger<PaymentProcessingJob> logger)
         {
             _processingReader = processorChannel.GetReader();
-            _persistenceReader = persistenceChannel;
+            _persistenceChannel = persistenceChannel;
             _serviceProvider = serviceProvider;
             _jobsConfig = jobsConfig;
             _logger = logger;
@@ -39,7 +40,7 @@ namespace AgoraVai.WebAPI.Jobs
 
             using var scope = _serviceProvider.CreateScope();
             var orchestrator = scope.ServiceProvider
-                .GetRequiredService<IPaymentProcessingOrchestratorService>();
+                .GetRequiredService<PaymentProcessingOrchestratorService>();
 
             var stopwatch = new Stopwatch();
             var buffer = new List<NewPaymentRequest>(batchSize);
@@ -92,8 +93,9 @@ namespace AgoraVai.WebAPI.Jobs
 
                             if (result.IsSuccess)
                             {
-                                await _persistenceReader.WriteAsync(result.Content, ct)
-                                    .ConfigureAwait(false);
+                                await _persistenceChannel.WriteAsync(
+                                    result.Content, ct)
+                                        .ConfigureAwait(false);
                                 return;
                             }
 

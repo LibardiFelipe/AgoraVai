@@ -20,8 +20,6 @@ services:
           cpus: "0.2"
           memory: "50MB"
 
-  # 0.3 x 3 = 0.9 CPUs
-  # 50MB x 3 = 150MB memória
   payment-api-1: &api
     container_name: payment-api-1
     hostname: payment-api-1
@@ -30,8 +28,6 @@ services:
       dockerfile: Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres:
-        "server=payment-db; database=PaymentsDB; user id=user; password=password; pooling=true; maximum pool size=20; multiplexing=true; no reset on close=true; max auto prepare=20; auto prepare min usages=1;"
       PaymentProcessors__Default__BaseUrl: "http://payment-processor-default:8080"
       PaymentProcessors__Fallback__BaseUrl: "http://payment-processor-fallback:8080"
       JobsConfig__ProcessingBatchSize: 100
@@ -39,8 +35,11 @@ services:
       JobsConfig__ProcessingWaitMs: 40
       JobsConfig__PersistenceBatchSize: 200
       JobsConfig__PersistenceWaitMs: 20
+      NetMQ__Host: "payment-metrics-api"
+      NetMQ__Port: 5556
+      NetMQ__Topic: "payments"
     depends_on:
-      payment-db:
+       payment-metrics-api:
         condition: service_healthy
     networks:
       - backend
@@ -64,49 +63,33 @@ services:
     container_name: payment-api-2
     hostname: payment-api-2
 
-  payment-api-3:
-    <<: *api
-    container_name: payment-api-3
-    hostname: payment-api-3
-
-  payment-db:
-    image: postgres:15-alpine
-    container_name: payment-db
-    hostname: payment-db
-    command: >-
-      postgres -c max_connections=40
-               -c shared_buffers=32MB 
-               -c work_mem=4MB
-               -c maintenance_work_mem=64MB
-               -c synchronous_commit=off
-               -c fsync=off
-               -c full_page_writes=off
-               -c wal_level=minimal
-               -c max_wal_senders=0
-               -c max_wal_size=1GB
-               -c checkpoint_timeout=30min
-               -c log_min_duration_statement=-1
+  payment-metrics-api:
+    container_name: payment-metrics-api
+    hostname: payment-metrics-api
+    build:
+      context: .
+      dockerfile: Dockerfile.metrics
     environment:
-      POSTGRES_DB: PaymentsDB
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      ASPNETCORE_ENVIRONMENT: Production
+      NetMQ__Host: "0.0.0.0"
+      NetMQ__Port: 5556
+      NetMQ__Topic: "payments"
     networks:
       - backend
-    ports:
-      - "5432:5432"
+      - payment-processor
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d PaymentsDB"]
-      interval: 10s
-      timeout: 5s
+      test: [
+        "CMD-SHELL",
+        "curl --fail http://localhost:8080/healthz || exit 1"]
+      interval: 15s
+      timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     deploy:
       resources:
         limits:
-          cpus: "0.4"
-          memory: "150MB"
+          cpus: '0.3'
+          memory: '50MB'
 
 networks:
   backend:

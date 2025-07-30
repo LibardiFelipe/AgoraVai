@@ -11,15 +11,15 @@ RUN apt-get update \
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["AgoraVai.Shared/AgoraVai.Shared.csproj", "AgoraVai.Shared/"]
-COPY ["AgoraVai.WebAPI/AgoraVai.WebAPI.csproj", "AgoraVai.WebAPI/"]
-RUN dotnet restore "./AgoraVai.WebAPI/AgoraVai.WebAPI.csproj"
+COPY ["AgoraVai.Metrics.WebAPI/AgoraVai.Metrics.WebAPI.csproj", "AgoraVai.Metrics.WebAPI/"]
+RUN dotnet restore "./AgoraVai.Metrics.WebAPI/AgoraVai.Metrics.WebAPI.csproj"
 COPY . .
-WORKDIR "/src/AgoraVai.WebAPI"
-RUN dotnet build "./AgoraVai.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/AgoraVai.Metrics.WebAPI"
+RUN dotnet build "./AgoraVai.Metrics.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./AgoraVai.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
+RUN dotnet publish "./AgoraVai.Metrics.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
 
 FROM base AS final
 
@@ -34,4 +34,4 @@ USER app
 WORKDIR /app
 EXPOSE 8080
 COPY --from=publish /app/publish .
-ENTRYPOINT ["./AgoraVai.WebAPI"]
+ENTRYPOINT ["./AgoraVai.Metrics.WebAPI"]

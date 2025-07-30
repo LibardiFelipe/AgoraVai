@@ -1,8 +1,8 @@
+using AgoraVai.Shared.Configs;
 using AgoraVai.WebAPI.Channels;
 using AgoraVai.WebAPI.Jobs;
 using AgoraVai.WebAPI.Models;
 using AgoraVai.WebAPI.Publishers;
-using AgoraVai.WebAPI.Repositories;
 using AgoraVai.WebAPI.Requests;
 using AgoraVai.WebAPI.Services;
 using AgoraVai.WebAPI.Utils;
@@ -37,8 +37,17 @@ namespace AgoraVai.WebAPI
             builder.Services.AddSingleton<ProcessingChannel>();
             builder.Services.AddSingleton<PersistenceChannel>();
             builder.Services.AddHostedService<PaymentProcessingJob>();
-            builder.Services.AddHostedService<PaymentPersistingJob>();
             builder.Services.AddSingleton<Publisher>();
+
+            var brokerHost = config.GetRequiredSection("NetMQ:Host").Get<string>()!;
+            var brokerPort = config.GetRequiredSection("NetMQ:Port").Get<int>();
+            var brokerTopic = config.GetRequiredSection("NetMQ:Topic").Get<string>()!;
+            builder.Services.AddSingleton(new BrokerConfig
+            {
+                Host = brokerHost,
+                Port = brokerPort,
+                Topic = brokerTopic
+            });
 
             var cfg1 = config.GetRequiredSection("JobsConfig:ProcessingBatchSize").Get<int>();
             var cfg2 = config.GetRequiredSection("JobsConfig:ProcessingParalellism").Get<int>();
@@ -54,12 +63,8 @@ namespace AgoraVai.WebAPI
                 PersistenceWaitMs = cfg5
             });
 
-            var cs = config.GetConnectionString("Postgres")!;
-            builder.Services.AddScoped<IPaymentRepository>(_ =>
-                new PaymentRepository(cs));
-
             builder.Services.AddHttpClients(config);
-            builder.Services.AddScoped<IPaymentProcessingOrchestratorService, PaymentProcessingOrchestratorService>();
+            builder.Services.AddScoped<PaymentProcessingOrchestratorService>();
 
             var app = builder.Build();
 
@@ -72,33 +77,6 @@ namespace AgoraVai.WebAPI
                 return Results.Accepted();
             });
 
-            app.MapGet("/payments-summary", async (
-                [FromServices] IPaymentRepository paymentRepository,
-                [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to) =>
-            {
-                var payments = await paymentRepository.GetProcessorsSummaryAsync(from, to)
-                    .ConfigureAwait(false);
-
-                var defaultPayment = payments
-                    .FirstOrDefault(p => p.ProcessedBy == "default")
-                        ?? new SummaryRowReadModel();
-                var fabllbackPayment = payments
-                    .FirstOrDefault(p => p.ProcessedBy == "fallback")
-                        ?? new SummaryRowReadModel();
-
-                return Results.Ok(new SummariesReadModel(
-                    new SummaryReadModel(defaultPayment.TotalRequests, defaultPayment.TotalAmount),
-                    new SummaryReadModel(fabllbackPayment.TotalRequests, fabllbackPayment.TotalAmount)));
-            });
-
-            app.MapPost("/purge-payments", async (
-                [FromServices] IPaymentRepository paymentRepository) =>
-            {
-                await paymentRepository.PurgeAsync()
-                    .ConfigureAwait(false);
-                return Results.Ok();
-            });
-
             app.MapHealthChecks("/healthz");
 
             app.Run();
@@ -106,7 +84,6 @@ namespace AgoraVai.WebAPI
     }
 
     [JsonSerializable(typeof(NewPaymentRequest))]
-    [JsonSerializable(typeof(SummariesReadModel))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
     {
     }

@@ -3,11 +3,10 @@
 namespace AgoraVai.WebAPI.Services
 {
     public sealed class DefaultPaymentProcessorService
-        : BasePaymentProcessorService, IDefaultPaymentProcessorService
+        : BasePaymentProcessorService
     {
         public DefaultPaymentProcessorService(
-            HttpClient httpClient, ILogger<DefaultPaymentProcessorService> logger)
-            : base(httpClient, logger)
+            HttpClient httpClient) : base(httpClient)
         {
         }
 

@@ -1,33 +1,26 @@
-﻿using NetMQ;
+﻿using AgoraVai.Shared.Configs;
+using NetMQ;
 using NetMQ.Sockets;
-using System.Text.Json;
 
 namespace AgoraVai.WebAPI.Publishers
 {
-    public sealed class Publisher
+    public sealed class Publisher : IDisposable
     {
+        private readonly BrokerConfig _brokerConfig;
         private readonly PublisherSocket _publisher;
-        private readonly string _topic = "messages";
 
-        public Publisher()
+        public Publisher(BrokerConfig brokerConfig)
         {
+            _brokerConfig = brokerConfig;
+
             _publisher = new PublisherSocket();
-            _publisher.Bind("tcp://*:5556");
+            _publisher.Connect(_brokerConfig.GetConnString());
         }
 
-        public void PublishMessage<T>(T message)
-        {
-            var jsonMessage = JsonSerializer.Serialize(message);
-            _publisher.SendMoreFrame(_topic).SendFrame(jsonMessage);
-        }
+        public void PublishMessage(string message) =>
+            _publisher.SendFrame($"{_brokerConfig.Topic} {message}");
 
-        public void PublishBatch<T>(IEnumerable<T> messages)
-        {
-            foreach (var message in messages)
-            {
-                var jsonMessage = JsonSerializer.Serialize(message);
-                _publisher.SendMoreFrame(_topic).SendFrame(jsonMessage);
-            }
-        }
+        public void Dispose() =>
+            _publisher?.Dispose();
     }
 }

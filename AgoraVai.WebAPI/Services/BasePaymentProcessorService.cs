@@ -6,17 +6,12 @@ using System.Text.Json.Serialization;
 
 namespace AgoraVai.Services
 {
-    public abstract class BasePaymentProcessorService : IPaymentProcessorService
+    public abstract class BasePaymentProcessorService
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<BasePaymentProcessorService> _logger;
 
-        protected BasePaymentProcessorService(
-            HttpClient httpClient, ILogger<BasePaymentProcessorService> logger)
-        {
+        protected BasePaymentProcessorService(HttpClient httpClient) =>
             _httpClient = httpClient;
-            _logger = logger;
-        }
 
         public abstract string ProcessorName { get; }
 
