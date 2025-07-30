@@ -11,6 +11,8 @@ services:
         condition: service_healthy
       payment-api-2:
         condition: service_healthy
+      payment-metrics-api:
+        condition: service_healthy
     networks:
       - backend
       - payment-processor
@@ -55,8 +57,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: '50MB'
+          cpus: '0.5'
+          memory: '125MB'
 
   payment-api-2:
     <<: *api

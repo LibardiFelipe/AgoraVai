@@ -37,6 +37,7 @@ namespace AgoraVai.WebAPI
             builder.Services.AddSingleton<ProcessingChannel>();
             builder.Services.AddSingleton<PersistenceChannel>();
             builder.Services.AddHostedService<PaymentProcessingJob>();
+            builder.Services.AddHostedService<PaymentPersistingJob>();
             builder.Services.AddSingleton<Publisher>();
 
             var brokerHost = config.GetRequiredSection("NetMQ:Host").Get<string>()!;
