@@ -1,5 +1,6 @@
 ﻿using AgoraVai.WebAPI.Channels;
 using AgoraVai.WebAPI.Entities;
+using AgoraVai.WebAPI.Repositories;
 using AgoraVai.WebAPI.Requests;
 using AgoraVai.WebAPI.Services;
 using AgoraVai.WebAPI.Utils;
@@ -39,7 +40,7 @@ namespace AgoraVai.WebAPI.Jobs
 
             using var scope = _serviceProvider.CreateScope();
             var orchestrator = scope.ServiceProvider
-                .GetRequiredService<IPaymentProcessingOrchestratorService>();
+                .GetRequiredService<PaymentProcessingOrchestratorService>();
 
             var buffer = new List<NewPaymentRequest>(batchSize);
             var stopwatch = new Stopwatch();
@@ -95,8 +96,9 @@ namespace AgoraVai.WebAPI.Jobs
 
                             if (result.IsSuccess)
                             {
-                                await _persistenceReader.WriteAsync(result.Content, ct)
-                                    .ConfigureAwait(false);
+                                //await _persistenceReader.WriteAsync(result.Content, ct)
+                                //    .ConfigureAwait(false);
+                                InMemoryPaymentRepository.Instance.Insert(payment);
                                 return;
                             }
 

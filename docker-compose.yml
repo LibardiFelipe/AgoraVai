@@ -17,8 +17,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: "50MB"
+          cpus: "0.3"
+          memory: "100MB"
 
   payment-api-1: &api
     container_name: payment-api-1
@@ -45,8 +45,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: '100MB'
+          cpus: '0.6'
+          memory: '125MB'
 
   payment-api-2:
     <<: *api

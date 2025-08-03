@@ -3,11 +3,10 @@
 namespace AgoraVai.WebAPI.Services
 {
     public sealed class FallbackPaymentProcessorService
-        : BasePaymentProcessorService, IFallbackPaymentProcessorService
+        : BasePaymentProcessorService
     {
-        public FallbackPaymentProcessorService(
-            HttpClient httpClient, ILogger<FallbackPaymentProcessorService> logger)
-            : base(httpClient, logger)
+        public FallbackPaymentProcessorService(HttpClient httpClient)
+            : base(httpClient)
         {
         }
 

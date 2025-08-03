@@ -3,14 +3,14 @@ using AgoraVai.WebAPI.Utils;
 
 namespace AgoraVai.WebAPI.Services
 {
-    public sealed class PaymentProcessingOrchestratorService : IPaymentProcessingOrchestratorService
+    public sealed class PaymentProcessingOrchestratorService
     {
-        private readonly IDefaultPaymentProcessorService _defaultProcessor;
-        private readonly IFallbackPaymentProcessorService _fallbackProcessor;
+        private readonly DefaultPaymentProcessorService _defaultProcessor;
+        private readonly FallbackPaymentProcessorService _fallbackProcessor;
 
         public PaymentProcessingOrchestratorService(
-            IDefaultPaymentProcessorService defaultProcessor,
-            IFallbackPaymentProcessorService fallbackProcessor)
+            DefaultPaymentProcessorService defaultProcessor,
+            FallbackPaymentProcessorService fallbackProcessor)
         {
             _defaultProcessor = defaultProcessor;
             _fallbackProcessor = fallbackProcessor;

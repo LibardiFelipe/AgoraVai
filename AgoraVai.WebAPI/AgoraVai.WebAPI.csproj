@@ -5,8 +5,20 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<PublishAot>true</PublishAot>
+		<Trimming>true</Trimming>
+		<TrimMode>link</TrimMode>
+		<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 		<InvariantGlobalization>true</InvariantGlobalization>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DisableImplicitComponents>true</DisableImplicitComponents>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+		<TieredCompilation>true</TieredCompilation>
+		<TieredPGO>true</TieredPGO>
+		<ReadyToRun>true</ReadyToRun>
+		<RetainVM>false</RetainVM>
+		<GCHeapCount>8</GCHeapCount>
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
 	</PropertyGroup>
 

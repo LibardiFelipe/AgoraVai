@@ -17,7 +17,7 @@ namespace AgoraVai.WebAPI.Utils
             var defaultUrl = config.GetRequiredSection("PaymentProcessors:Default:BaseUrl").Value!;
             var fallbackUrl = config.GetRequiredSection("PaymentProcessors:Fallback:BaseUrl").Value!;
 
-            services.AddHttpClient<IDefaultPaymentProcessorService, DefaultPaymentProcessorService>(
+            services.AddHttpClient<DefaultPaymentProcessorService>(
                 client =>
                 {
                     client.BaseAddress = new Uri(defaultUrl);
@@ -26,7 +26,7 @@ namespace AgoraVai.WebAPI.Utils
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
                 .AddPolicyHandler(DefaultRetryPolicy);
 
-            services.AddHttpClient<IFallbackPaymentProcessorService, FallbackPaymentProcessorService>(
+            services.AddHttpClient<FallbackPaymentProcessorService>(
                 client =>
                 {
                     client.BaseAddress = new Uri(fallbackUrl);

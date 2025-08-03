@@ -33,8 +33,6 @@ namespace AgoraVai.WebAPI.Jobs
                 batchSize, maxWaitMs);
 
             using var scope = _serviceProvider.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IPaymentRepository>();
-
             var buffer = new List<Payment>(batchSize);
             var stopwatch = new Stopwatch();
 
@@ -69,8 +67,8 @@ namespace AgoraVai.WebAPI.Jobs
                     }
 
                     stopwatch.Restart();
-                    await repository.InserBatchAsync(buffer)
-                        .ConfigureAwait(false);
+                    //await InMemoryPaymentRepository.Instance.InserBatchAsync(buffer)
+                    //    .ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

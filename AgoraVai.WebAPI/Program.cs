@@ -5,9 +5,6 @@ using AgoraVai.WebAPI.Requests;
 using AgoraVai.WebAPI.Services;
 using AgoraVai.WebAPI.Utils;
 using Microsoft.AspNetCore.Mvc;
-using System.Buffers.Text;
-using System.Net;
-using System.Runtime;
 using System.Text.Json.Serialization;
 using System.Web;
 
@@ -20,7 +17,7 @@ namespace AgoraVai.WebAPI
             var builder = WebApplication.CreateSlimBuilder(args);
             var config = builder.Configuration;
 
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+            GC.TryStartNoGCRegion(100 * 1024 * 1024);
             builder.WebHost.ConfigureKestrel(options =>
             {
                 options.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
@@ -38,14 +35,9 @@ namespace AgoraVai.WebAPI
             builder.Services.AddSingleton<ProcessorChannel>();
             builder.Services.AddSingleton<PersistenceChannel>();
             builder.Services.AddHostedService<PaymentProcessingJob>();
-            builder.Services.AddHostedService<PaymentPersistingJob>();
-
-            //var cs = config.GetConnectionString("Postgres")!;
-            builder.Services.AddSingleton<IPaymentRepository>(_ =>
-                new InMemoryPaymentRepository());
 
             builder.Services.AddHttpClients(config);
-            builder.Services.AddScoped<IPaymentProcessingOrchestratorService, PaymentProcessingOrchestratorService>();
+            builder.Services.AddScoped<PaymentProcessingOrchestratorService>();
 
             var app = builder.Build();
 
@@ -58,13 +50,10 @@ namespace AgoraVai.WebAPI
                 return Results.Accepted();
             });
 
-            app.MapGet("/internal/payments-summary", async (
-                [FromServices] IPaymentRepository paymentRepository,
+            app.MapGet("/internal/payments-summary", (
                 [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to) =>
             {
-                var payments = await paymentRepository.GetProcessorsSummaryAsync(from, to)
-                    .ConfigureAwait(false);
-
+                var payments = InMemoryPaymentRepository.Instance.GetSummaries(from, to);
                 var defaultPayment = payments
                     .FirstOrDefault(p => p.ProcessedBy == "default")
                         ?? new SummaryRowReadModel();
@@ -89,7 +78,6 @@ namespace AgoraVai.WebAPI
 
             app.MapGet("/payments-summary", async (
                 [FromServices] IHttpClientFactory httpClientFactory,
-                [FromServices] IPaymentRepository paymentRepository,
                 [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to) =>
             {
                 var queryParams = HttpUtility.ParseQueryString(string.Empty);
@@ -108,8 +96,7 @@ namespace AgoraVai.WebAPI
 
                 externalResult ??= new SummariesReadModel();
 
-                var localPayments = await paymentRepository.GetProcessorsSummaryAsync(from, to)
-                    .ConfigureAwait(false);
+                var localPayments = InMemoryPaymentRepository.Instance.GetSummaries(from, to);
 
                 var localDefaultPayment = localPayments
                     .FirstOrDefault(p => p.ProcessedBy == "default")
@@ -135,12 +122,9 @@ namespace AgoraVai.WebAPI
                 return Results.Ok(combinedResult);
             });
 
-
-            app.MapPost("/purge-payments", async (
-                [FromServices] IPaymentRepository paymentRepository) =>
+            app.MapPost("/purge-payments", () =>
             {
-                await paymentRepository.PurgeAsync()
-                    .ConfigureAwait(false);
+                InMemoryPaymentRepository.Instance.Purge();
                 return Results.Ok();
             });
 
