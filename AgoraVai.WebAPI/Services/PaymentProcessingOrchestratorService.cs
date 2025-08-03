@@ -19,14 +19,16 @@ namespace AgoraVai.WebAPI.Services
         public async ValueTask<Result<Payment>> ProcessAsync(
             Payment payment, CancellationToken cancellationToken = default)
         {
-            var success = await _defaultProcessor.ProcessAsync(payment, cancellationToken);
+            var success = await _defaultProcessor.ProcessAsync(payment, cancellationToken)
+                .ConfigureAwait(false);
             if (success)
             {
                 return Result<Payment>.Success(
                     payment.WithProcessor(_defaultProcessor.ProcessorName));
             }
 
-            success = await _fallbackProcessor.ProcessAsync(payment, cancellationToken);
+            success = await _fallbackProcessor.ProcessAsync(payment, cancellationToken)
+                .ConfigureAwait(false);
             if (success)
             {
                 return Result<Payment>.Success(

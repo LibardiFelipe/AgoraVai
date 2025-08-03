@@ -33,7 +33,8 @@ namespace AgoraVai.Services
                     mediaType: "application/json");
 
                 using var result = await _httpClient.PostAsync(
-                    "/payments", content, cancellationToken);
+                    "/payments", content, cancellationToken)
+                    .ConfigureAwait(false);
 
                 return result.IsSuccessStatusCode;
             }

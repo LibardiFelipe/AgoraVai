@@ -53,7 +53,8 @@ namespace AgoraVai.WebAPI.Jobs
                     buffer.Clear();
                     stopwatch.Restart();
 
-                    var first = await _processingReader.ReadAsync(stoppingToken);
+                    var first = await _processingReader.ReadAsync(stoppingToken)
+                        .ConfigureAwait(false);
                     buffer.Add(first);
 
                     var batchStart = Stopwatch.GetTimestamp();
@@ -65,7 +66,8 @@ namespace AgoraVai.WebAPI.Jobs
                         var readTask = _processingReader.WaitToReadAsync(stoppingToken).AsTask();
                         var delayTask = Task.Delay(maxWaitMs - (int)elapsed, stoppingToken);
 
-                        var winner = await Task.WhenAny(readTask, delayTask);
+                        var winner = await Task.WhenAny(readTask, delayTask)
+                            .ConfigureAwait(false);
                         if (winner == delayTask || !readTask.Result) break;
 
                         while (buffer.Count < batchSize && _processingReader.TryRead(out var item))
@@ -104,7 +106,7 @@ namespace AgoraVai.WebAPI.Jobs
                         {
                             _logger.LogError(ex, "Erro no pagamento {Id}.", payment.CorrelationId);
                         }
-                    });
+                    }).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
